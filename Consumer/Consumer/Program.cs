@@ -1,4 +1,5 @@
-﻿using RabbitMQ.Client;
+﻿using Consumer.Consumer;
+using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System;
 using System.Text;
@@ -9,36 +10,20 @@ namespace Consumer
     {
         public static void Main()
         {
-            var factory = new ConnectionFactory() { HostName = "localhost", UserName = "admin", Password = "admin", Port = 5672, VirtualHost = "test" };
-            using (var connection = factory.CreateConnection())
-            using (var channel = connection.CreateModel())
+            var config = new ConsumerConfiguration()
             {
-                channel.ExchangeDeclare(exchange: "logs", type: ExchangeType.Fanout);
+                HostName = "localhost",
+                UserName = "admin",
+                Password = "admin",
+                Port = 5672,
+                VirtualHost = "test",
+                ExchangeName = "exchangetest",
+                QueueName = "queueonetest"
+            };
 
-                var queueName = channel.QueueDeclare().QueueName;
-                channel.QueueBind(queue: queueName,
-                                  exchange: "logs",
-                                  routingKey: "");
+            var consumer = new BasicConsumer<Message>(config);
 
-                Console.WriteLine(" [*] Waiting for logs.");
-
-                var consumer = new EventingBasicConsumer(channel);
-
-                consumer.Received += (model, ea) =>
-                {
-                    var body = ea.Body.ToArray();
-                    var message = Encoding.UTF8.GetString(body);
-                    Console.WriteLine(" [x] {0}", message);
-                };
-                channel.BasicConsume(queue: queueName,
-                                        autoAck: true,
-                                        consumer: consumer);
-
-                while (true)
-                {
-
-                }
-            }
+            Console.ReadLine();
         }
     }
 }
